@@ -15,14 +15,15 @@ def generate_link_html(file_path):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.doc_ref = pl.read_excel("/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/all_filename_detail_050442.xlsx")
+        self.doc_ref = pl.read_excel("all_filename_detail_050442.xlsx")
         self.methods_list = None
         self.methods_str = None
         self.cmpd_list = None
         self.client = None
-        self.lower_year = None
-        self.upper_year = None
-        self.found_docs = pl.read_excel("/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/all_filename_detail_050442.xlsx")
+        (self.minyear, self.maxyear) = get_possible_years(self.doc_ref)
+        self.lower_year = self.minyear
+        self.upper_year = self.maxyear
+        self.found_docs = pl.read_excel("all_filename_detail_050442.xlsx")
         self.initUI()
 
     def initUI(self):
@@ -82,7 +83,7 @@ class MainWindow(QWidget):
         search_layout.addWidget(client_label)
         search_layout.addWidget(self.client_combo)
 
-        (self.minyear, self.maxyear) = get_possible_years(self.doc_ref)
+        # (self.minyear, self.maxyear) = get_possible_years(self.doc_ref)
         hbox = QHBoxLayout()
         label = QLabel('Select Year Range')
         hbox.addWidget(label)
@@ -147,13 +148,19 @@ class MainWindow(QWidget):
 
     def method_choice(self):
         self.methods_list = [item.text() for item in self.method_combo.selectedItems()]
-    
+        if len(self.methods_list) == 0:
+            self.methods_list = None
+
     def heading_choice(self):
         self.methods_str = self.heading_edit.text()
-        # print(self.methods_str)
+        if self.methods_str == '':
+            self.methods_str = None
+        
     
     def cmpds_choice(self):
         self.cmpd_list = [item.text() for item in self.cmpds_combo.selectedItems()]
+        if len(self.cmpd_list) == 0:
+            self.cmpd_list = None
     
     def client_choice(self):
         self.client = self.client_combo.currentText()
@@ -170,13 +177,18 @@ class MainWindow(QWidget):
     
     def search_docs(self):
 
+        dr = pl.read_excel("all_filename_detail_050442.xlsx")
+        print(self.methods_str)
         if self.methods_str is not None:
-            sms = search_method_str(self.methods_str, self.doc_ref)
+            sms = search_method_str(self.methods_str, dr)
             if sms is None:
                 QMessageBox.information(self, 'Text not found', self.methods_str + " not found in any document methods")
                 return 
+            
         else:
-            sms = self.doc_ref
+            sms = dr
+        
+        print(f"{len(sms)} after method string search")
         
         if self.methods_list is not None:
             fmm = find_matching_methods(self.methods_list, sms)
@@ -185,6 +197,8 @@ class MainWindow(QWidget):
                 return
         else:
             fmm = sms
+        
+        # print(f"{len(fmm)} after method list search")
 
         if self.cmpd_list is not None:
             fmc = find_matching_compounds(self.cmpd_list, fmm)
@@ -194,6 +208,8 @@ class MainWindow(QWidget):
         else:
             fmc = fmm
         
+        # print(f"{len(fmc)} after compound list search")
+        
         if self.client is not None:
             fcm = find_client_match(self.client, fmc)
             if fcm is None:
@@ -202,18 +218,18 @@ class MainWindow(QWidget):
         else:
             fcm = fmc
         
+        # print(f"{len(fcm)} after client search")
 
         if self.lower_year is None and self.upper_year is None:
             fin = fcm
         elif self.lower_year is not None and self.upper_year is None:
-            fin = find_date_range(self.lower_year, fmc)
-        elif self.lower_year is None and self.upper_year is not None:
-            fin = find_date_range((self.minyear, self.upper_year), fmc)
+            fin = find_date_range(self.lower_year, fcm)
         elif self.lower_year == self.upper_year:
-            fin = find_date_range(self.lower_year, fmc)
+            fin = find_date_range(self.lower_year, fcm)
         else:
-            fin = find_date_range((self.lower_year, self.upper_year), fmc)
+            fin = find_date_range((self.lower_year, self.upper_year), fcm)
         
+
         if len(fin) == 0:
             QMessageBox.information(self, 'No match found', "No documents matched criteria")
             return
@@ -234,15 +250,17 @@ class MainWindow(QWidget):
         self.clearLayout(self.display_layout)
         self.methods_list = None
         self.methods_str = None
+        self.heading_edit.clear()
         self.cmpd_list = None
         self.client = None
-        self.lower_year = None
-        self.upper_year = None
-        self.found_docs = pl.read_excel("/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/all_filename_detail_050442.xlsx")
+        self.lower_year = self.minyear
+        self.upper_year = self.maxyear
+        # self.found_docs = pl.read_excel("all_filename_detail_050442.xlsx")
         self.upper.setValue(self.maxyear)
         self.lower.setValue(self.minyear)
         self.stacked_layout.setCurrentIndex(0)
-        
+        # self.doc_ref = pl.read_excel("all_filename_detail_050442.xlsx")
+    
     
     def clearLayout(self, layout):
         if layout is not None:

@@ -1,7 +1,7 @@
 import polars as pl
 from datetime import datetime
 
-def search_method_str(token, doc_ref, heading_ref = "/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/headings.csv"):
+def search_method_str(token, doc_ref, heading_ref = "headings.csv"):
     ref = pl.read_csv(heading_ref)
     ref = (ref.with_columns([pl.col('heading').str.to_lowercase()]))
 
@@ -17,7 +17,7 @@ def search_method_str(token, doc_ref, heading_ref = "/Users/rebeccakrall/Data/Pr
         return None
 
 
-def find_matching_methods(method_list, doc_ref, method_ref = "/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/methods.csv" ):
+def find_matching_methods(method_list, doc_ref, method_ref = "methods.csv" ):
     ref = pl.read_csv(method_ref)
 
     filtered_documents = ref.group_by('document_id').agg(pl.col('method')) \
@@ -33,7 +33,7 @@ def find_matching_methods(method_list, doc_ref, method_ref = "/Users/rebeccakral
         return None
 
 
-def find_matching_compounds(compound_list, doc_ref, compound_ref = "/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/common_compound_matches.csv"):
+def find_matching_compounds(compound_list, doc_ref, compound_ref = "common_compound_matches.csv"):
     ref = pl.read_csv(compound_ref)
     filtered_documents = ref.group_by('document_id').agg(pl.col('compound')) \
                         .filter(pl.col('compound').map_elements(lambda methods: all(method in methods for method in compound_list))) \
@@ -63,15 +63,15 @@ def find_client_match(client, doc_ref):
 
 
 def get_possible_methods():
-    methods = pl.read_excel("/Users/rebeccakrall/Data/Proposal-Report-Data/Reference_Data/Assay_List.xlsx")
+    methods = pl.read_excel("Assay_List.xlsx")
     return methods['Assay'].unique().sort().to_list()
 
 def get_possible_clients():
-    clients = pl.read_excel("/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/Final_Client_Codes.xlsx")
+    clients = pl.read_excel("Final_Client_Codes.xlsx")
     return clients['client'].sort().to_list()
 
 def get_possible_compounds():
-    cmpds = pl.read_excel("/Users/rebeccakrall/Data/Proposal-Report-Data/Final_References/Melior common drugs.xlsx")
+    cmpds = pl.read_excel("Melior common drugs.xlsx")
     return cmpds['Compound'].sort().to_list()
 
 def get_possible_years(doc_ref):
